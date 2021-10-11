@@ -18,8 +18,11 @@ import android.util.Log;
 import android.widget.Toast;
 
 import androidx.core.app.ActivityCompat;
+import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
 public class MyService extends Service implements LocationListener {
+    public static final String LOCATION_BROADCAST_ACTION = "pl.edu.uj.broadcast.MY_LOC_BROADCAST";
+
     public MyService() {
     }
 
@@ -170,6 +173,11 @@ public class MyService extends Service implements LocationListener {
         // TODO Auto-generated method stub
         currentLocation = location;
         Log.d(TAG,location.toString());
+        Intent intent = new Intent();
+        intent.setAction(LOCATION_BROADCAST_ACTION);
+        intent.putExtra("LAT", location.getLatitude());
+        intent.putExtra("LON", location.getLongitude());
+        sendBroadcast(intent);
 
 
     }
@@ -191,7 +199,7 @@ public class MyService extends Service implements LocationListener {
         @Override
         synchronized public void onReceive(Context context, Intent intent) {
             int batteryLevel = intent.getIntExtra(BatteryManager.EXTRA_LEVEL, 0);
-            if(batteryLevel < 10)
+            if(batteryLevel < 30)
                 Toast.makeText(context,"Battery level low",Toast.LENGTH_LONG).show();
         }
     };

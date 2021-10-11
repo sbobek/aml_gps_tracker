@@ -6,21 +6,42 @@ import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
 import android.Manifest;
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
+import android.widget.TextClock;
+import android.widget.TextView;
+import android.widget.Toast;
 
 import com.google.android.material.snackbar.Snackbar;
 
 public class GPSTracker extends AppCompatActivity implements ActivityCompat.OnRequestPermissionsResultCallback  {
 
+    public class MyBroadcastReceiver extends BroadcastReceiver {
+        private static final String TAG = "MyBroadcastReceiver";
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            double lat = intent.getDoubleExtra("LAT", 0);
+            double lon = intent.getDoubleExtra("LON", 0);
+            gpsData.setText("Latitude: "+lat+" Longitude: "+lon);
+        }
+
+    }
+
     private static final String TAG = "Tracking Service";
     private static final int  PERMISSION_REQUEST_LOCATION=0;
+    BroadcastReceiver br = new MyBroadcastReceiver();
 
     Button buttonStart, buttonStop;
+    TextView gpsData;
+
+
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -29,6 +50,10 @@ public class GPSTracker extends AppCompatActivity implements ActivityCompat.OnRe
 
         buttonStart = (Button) findViewById(R.id.buttonStart);
         buttonStop = (Button) findViewById(R.id.buttonStop);
+        gpsData = (TextView) findViewById(R.id.gpsData);
+
+        IntentFilter filter = new IntentFilter(MyService.LOCATION_BROADCAST_ACTION);
+        this.registerReceiver(br, filter);
 
     }
 
@@ -49,12 +74,10 @@ public class GPSTracker extends AppCompatActivity implements ActivityCompat.OnRe
             ActivityCompat.requestPermissions(this,
                     new String[]{Manifest.permission.ACCESS_FINE_LOCATION,Manifest.permission.ACCESS_COARSE_LOCATION},
                     PERMISSION_REQUEST_LOCATION);
-                    Log.d(TAG,"FTW");
 
         } else {
             ActivityCompat.requestPermissions(this,
                     new String[]{Manifest.permission.ACCESS_FINE_LOCATION,Manifest.permission.ACCESS_COARSE_LOCATION}, PERMISSION_REQUEST_LOCATION);
-            Log.d(TAG,"FTW-noask");
         }
     }
 
