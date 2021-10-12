@@ -13,6 +13,7 @@ import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.BatteryManager;
+import android.os.Binder;
 import android.os.IBinder;
 import android.util.Log;
 import android.widget.Toast;
@@ -21,15 +22,20 @@ import androidx.core.app.ActivityCompat;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
 public class MyService extends Service implements LocationListener {
-    public static final String LOCATION_BROADCAST_ACTION = "pl.edu.uj.broadcast.MY_LOC_BROADCAST";
 
-    public MyService() {
+    // Binder given to clients
+    private final IBinder binder = new LocalBinder();
+
+    public class LocalBinder extends Binder {
+        MyService getService() {
+            // Return this instance of LocalService so clients can call public methods
+            return MyService.this;
+        }
     }
 
     @Override
     public IBinder onBind(Intent intent) {
-        // TODO: Return the communication channel to the service.
-        throw new UnsupportedOperationException("Not yet implemented");
+        return binder;
     }
 
     private static final String TAG = "Tracking Service";
@@ -46,9 +52,28 @@ public class MyService extends Service implements LocationListener {
     public void onCreate() {
         Toast.makeText(this, "Tracking Service Created", Toast.LENGTH_LONG).show();
         Log.d(TAG, "onCreate");
-        mLocationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
         registerReceiver(this.batteryInfoReceiver, new IntentFilter(Intent.ACTION_BATTERY_CHANGED));
+        mLocationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
         currentLocation = null;
+
+        Toast.makeText(this, "Tracking Service Started", Toast.LENGTH_LONG).show();
+        Log.d(TAG, "onStart");
+
+        Location gpsLocation = null;
+        Location networkLocation = null;
+        // Request updates from both fine (gps) and coarse (network) providers.
+        gpsLocation = requestUpdatesFromProvider(
+                LocationManager.GPS_PROVIDER,RECORD_FREQ);
+        networkLocation = requestUpdatesFromProvider(
+                LocationManager.NETWORK_PROVIDER,RECORD_FREQ);
+
+        if (gpsLocation != null && networkLocation != null) {
+            currentLocation =  getBetterLocation(gpsLocation, networkLocation);
+        } else if (gpsLocation != null) {
+            currentLocation= gpsLocation;
+        } else if (networkLocation != null) {
+            currentLocation = networkLocation;
+        }
     }
 
 
@@ -111,6 +136,9 @@ public class MyService extends Service implements LocationListener {
         return provider1.equals(provider2);
     }
 
+    public Location getCurrentLocation() {
+        return currentLocation;
+    }
 
     /**
      * Method to register location updates with a desired location provider.  If the requested
@@ -145,41 +173,10 @@ public class MyService extends Service implements LocationListener {
 
 
     @Override
-    public int onStartCommand(Intent intent, int flags, int startId) {
-        Toast.makeText(this, "Tracking Service Started", Toast.LENGTH_LONG).show();
-        Log.d(TAG, "onStart");
-
-        Location gpsLocation = null;
-        Location networkLocation = null;
-        // Request updates from both fine (gps) and coarse (network) providers.
-        gpsLocation = requestUpdatesFromProvider(
-                LocationManager.GPS_PROVIDER,RECORD_FREQ);
-        networkLocation = requestUpdatesFromProvider(
-                LocationManager.NETWORK_PROVIDER,RECORD_FREQ);
-
-        if (gpsLocation != null && networkLocation != null) {
-            currentLocation =  getBetterLocation(gpsLocation, networkLocation);
-        } else if (gpsLocation != null) {
-            currentLocation= gpsLocation;
-        } else if (networkLocation != null) {
-            currentLocation = networkLocation;
-        }
-        return START_STICKY;
-    }
-
-
-    @Override
     synchronized public void onLocationChanged(Location location) {
         // TODO Auto-generated method stub
         currentLocation = location;
         Log.d(TAG,location.toString());
-        Intent intent = new Intent();
-        intent.setAction(LOCATION_BROADCAST_ACTION);
-        intent.putExtra("LAT", location.getLatitude());
-        intent.putExtra("LON", location.getLongitude());
-        sendBroadcast(intent);
-
-
     }
 
     @Override
