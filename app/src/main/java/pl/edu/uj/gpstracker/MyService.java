@@ -3,6 +3,8 @@ package pl.edu.uj.gpstracker;
 import android.Manifest;
 import android.annotation.SuppressLint;
 import android.app.Activity;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
 import android.app.Service;
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -13,15 +15,18 @@ import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.BatteryManager;
+import android.os.Build;
 import android.os.IBinder;
 import android.util.Log;
 import android.widget.Toast;
 
 import androidx.core.app.ActivityCompat;
+import androidx.core.app.NotificationCompat;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
 public class MyService extends Service implements LocationListener {
     public static final String LOCATION_BROADCAST_ACTION = "pl.edu.uj.broadcast.MY_LOC_BROADCAST";
+    private static final String CHANNEL_ID = "pl.edu.uj.broadcast.MY_LOC_CHANNEL";
 
     public MyService() {
     }
@@ -41,6 +46,29 @@ public class MyService extends Service implements LocationListener {
     private LocationManager mLocationManager;
     private Location currentLocation;
 
+    NotificationCompat.Builder builder = new NotificationCompat.Builder(this, CHANNEL_ID)
+            .setSmallIcon(R.drawable.ic_location)
+            .setContentTitle("GPS")
+            .setContentText("New Location")
+            .setPriority(NotificationCompat.PRIORITY_DEFAULT);
+
+
+    private void createNotificationChannel() {
+        // Create the NotificationChannel, but only on API 26+ because
+        // the NotificationChannel class is new and not in the support library
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            CharSequence name = "Location Update";
+            String description = "Your location has changed";
+            int importance = NotificationManager.IMPORTANCE_DEFAULT;
+            NotificationChannel channel = new NotificationChannel(CHANNEL_ID, name, importance);
+            channel.setDescription(description);
+            // Register the channel with the system; you can't change the importance
+            // or other notification behaviors after this
+            NotificationManager notificationManager = getSystemService(NotificationManager.class);
+            notificationManager.createNotificationChannel(channel);
+        }
+    }
+
 
     @Override
     public void onCreate() {
@@ -49,6 +77,10 @@ public class MyService extends Service implements LocationListener {
         mLocationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
         registerReceiver(this.batteryInfoReceiver, new IntentFilter(Intent.ACTION_BATTERY_CHANGED));
         currentLocation = null;
+        createNotificationChannel();
+        startForeground(1,builder.build());
+
+
     }
 
 

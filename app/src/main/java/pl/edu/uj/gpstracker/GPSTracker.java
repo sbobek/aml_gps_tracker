@@ -1,6 +1,7 @@
 package pl.edu.uj.gpstracker;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
@@ -11,6 +12,8 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
+import android.media.AudioManager;
+import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
@@ -22,6 +25,9 @@ import android.widget.Toast;
 import com.google.android.material.snackbar.Snackbar;
 
 public class GPSTracker extends AppCompatActivity implements ActivityCompat.OnRequestPermissionsResultCallback  {
+
+
+
 
     public class MyBroadcastReceiver extends BroadcastReceiver {
         private static final String TAG = "MyBroadcastReceiver";
@@ -35,7 +41,8 @@ public class GPSTracker extends AppCompatActivity implements ActivityCompat.OnRe
     }
 
     private static final String TAG = "Tracking Service";
-    private static final int  PERMISSION_REQUEST_LOCATION=0;
+    private static final int  PERMISSION_REQUEST_LOCATION = 0;
+    private static final int PERMISSION_REQUEST_BG_LOCATION = 1;
     BroadcastReceiver br = new MyBroadcastReceiver();
 
     Button buttonStart, buttonStop;
@@ -54,6 +61,7 @@ public class GPSTracker extends AppCompatActivity implements ActivityCompat.OnRe
 
         IntentFilter filter = new IntentFilter(MyService.LOCATION_BROADCAST_ACTION);
         this.registerReceiver(br, filter);
+        requestLocationPermission();
 
     }
 
@@ -70,14 +78,14 @@ public class GPSTracker extends AppCompatActivity implements ActivityCompat.OnRe
             // Provide an additional rationale to the user if the permission was not granted
             // and the user would benefit from additional context for the use of the permission.
             // Display a SnackBar with cda button to request the missing permission.
-
             ActivityCompat.requestPermissions(this,
                     new String[]{Manifest.permission.ACCESS_FINE_LOCATION,Manifest.permission.ACCESS_COARSE_LOCATION},
                     PERMISSION_REQUEST_LOCATION);
 
         } else {
             ActivityCompat.requestPermissions(this,
-                    new String[]{Manifest.permission.ACCESS_FINE_LOCATION,Manifest.permission.ACCESS_COARSE_LOCATION}, PERMISSION_REQUEST_LOCATION);
+                    new String[]{Manifest.permission.ACCESS_FINE_LOCATION,Manifest.permission.ACCESS_COARSE_LOCATION},
+                    PERMISSION_REQUEST_LOCATION);
         }
     }
 
@@ -88,9 +96,22 @@ public class GPSTracker extends AppCompatActivity implements ActivityCompat.OnRe
         // BEGIN_INCLUDE(onRequestPermissionsResult)
         if (requestCode == PERMISSION_REQUEST_LOCATION) {
             // Request for camera permission.
-            if (grantResults.length == 2 && grantResults[0] == PackageManager.PERMISSION_GRANTED && grantResults[1] == PackageManager.PERMISSION_GRANTED) {
+            if (grantResults.length == 2 && grantResults[0] == PackageManager.PERMISSION_GRANTED
+                    && grantResults[1] == PackageManager.PERMISSION_GRANTED) {
                 // Permission has been granted. Start camera preview Activity.
                 Log.d(TAG, "All permisions granted");
+                requestBgLocationPermission();
+
+            } else {
+                // Permission request was denied.
+                Log.d(TAG, "Not all permisions granted");
+
+            }
+        }else if (requestCode == PERMISSION_REQUEST_BG_LOCATION) {
+            if (grantResults.length == 1 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                // Permission has been granted. Start camera preview Activity.
+                Log.d(TAG, "All permisions granted");
+                requestBgLocationPermission();
 
             } else {
                 // Permission request was denied.
@@ -101,8 +122,32 @@ public class GPSTracker extends AppCompatActivity implements ActivityCompat.OnRe
         // END_INCLUDE(onRequestPermissionsResult)
     }
 
+    /**
+     * Requests the {@link android.Manifest.permission#CAMERA} permission.
+     * If an additional rationale should be displayed, the user has to launch the request from
+     * a SnackBar that includes additional information.
+     */
+    private void requestBgLocationPermission() {
+        // Permission has not been granted and must be requested.
+        if (ActivityCompat.shouldShowRequestPermissionRationale(this,
+                Manifest.permission.ACCESS_BACKGROUND_LOCATION)) {
+            // Provide an additional rationale to the user if the permission was not granted
+            // and the user would benefit from additional context for the use of the permission.
+            // Display a SnackBar with cda button to request the missing permission.
+            ActivityCompat.requestPermissions(this,
+                    new String[]{Manifest.permission.ACCESS_BACKGROUND_LOCATION},
+                    PERMISSION_REQUEST_LOCATION);
+
+        } else {
+            ActivityCompat.requestPermissions(this,
+                    new String[]{Manifest.permission.ACCESS_BACKGROUND_LOCATION},
+                    PERMISSION_REQUEST_LOCATION);
+        }
+    }
+
+
+    @RequiresApi(api = Build.VERSION_CODES.O)
     public void onClick(View src) {
-        requestLocationPermission();
         switch (src.getId()) {
             case R.id.buttonStart:
                 Log.d(TAG, "onClick: starting srvice");
@@ -115,4 +160,5 @@ public class GPSTracker extends AppCompatActivity implements ActivityCompat.OnRe
 
         }
     }
+
 }
