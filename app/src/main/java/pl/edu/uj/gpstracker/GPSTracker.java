@@ -161,4 +161,6 @@ public class GPSTracker extends AppCompatActivity implements ActivityCompat.OnRe
         }
     }
 
+    //See more: https://github.com/android/location-samples/blob/432d3b72b8c058f220416958b444274ddd186abd/LocationUpdatesForegroundService/app/src/main/java/com/google/android/gms/location/sample/locationupdatesforegroundservice/LocationUpdatesService.java
+
 }

@@ -41,6 +41,7 @@ public class MyService extends Service implements LocationListener {
     private static final int ONE_MINUTE = 1000 * 60;
     private static final int TWO_MINUTES = 1000 * 60 * 2;
     private static final int RECORD_FREQ = ONE_MINUTE / 60;
+    private static final int NOTIFICATION_ID = 12345678;
 
 
     private LocationManager mLocationManager;
@@ -78,7 +79,7 @@ public class MyService extends Service implements LocationListener {
         registerReceiver(this.batteryInfoReceiver, new IntentFilter(Intent.ACTION_BATTERY_CHANGED));
         currentLocation = null;
         createNotificationChannel();
-        startForeground(1,builder.build());
+        startForeground(NOTIFICATION_ID,builder.build());
 
 
     }
